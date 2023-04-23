@@ -79,7 +79,12 @@ func main() {
 		db := utils.GetDB()
 		address := claims["address"].(string)
 		github := userInfo["login"].(string)
-		email := userInfo["email"].(string)
+		email, ok := userInfo["email"].(string)
+		if !ok {
+			email = ""
+		}
+
+		logger.Info("userInfo", zap.Any("user", userInfo))
 		addr := utils.Address{}
 
 		result := db.Model(&addr).Where("addr = ?", address).Updates(map[string]interface{}{"github": github, "email": email})
