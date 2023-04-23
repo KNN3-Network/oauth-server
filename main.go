@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/KNN3-Network/oauth-server/module"
 	"github.com/KNN3-Network/oauth-server/utils"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -34,6 +35,7 @@ func init() {
 		Scopes:       []string{"read:user", "user:email"}, // 请求用户信息和邮箱权限
 		Endpoint:     github.Endpoint,
 	}
+
 }
 
 func main() {
@@ -89,6 +91,15 @@ func main() {
 
 		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social")
 	})
+
+	// stackexchange callback
+	v1 := r.Group("/oauth")
+	{
+		stackoverflow := new(module.Stackoverflow)
+		v1.GET("/stackoverflow", stackoverflow.AuthCodeURL)
+		v1.GET("/stackoverflow/callback", stackoverflow.CallBack)
+	}
+
 	r.Run(":8001")
 }
 
