@@ -13,7 +13,10 @@ require (
 	gorm.io/gorm v1.25.0
 )
 
+require github.com/gorilla/websocket v1.4.2 // indirect
+
 require (
+	github.com/bwmarrin/discordgo v0.27.1
 	github.com/bytedance/sonic v1.8.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect

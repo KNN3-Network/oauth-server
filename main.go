@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/KNN3-Network/oauth-server/utils"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -43,6 +42,10 @@ func main() {
 	r.GET("/oauth/github", func(c *gin.Context) {
 		code := c.Query("code")
 		jwtToken := c.Query("jwt")
+		if code == "" {
+			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("No authorization code provided."))
+			return
+		}
 		logger.Info("github oauth认证", zap.String("code", code))
 		// 使用OAuth配置对象中定义的Exchange方法，通过code获取access token
 		token, err := githubOauthConfig.Exchange(c, code)
@@ -59,25 +62,14 @@ func main() {
 			c.Redirect(http.StatusTemporaryRedirect, "/error")
 			return
 		}
-		// 解析JWT
-		parsedToken, err := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
-			// 验证算法和密钥
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("invalid signing method")
-			}
-			return []byte("my_secret_key"), nil
-		})
 
-		if err != nil {
-			logger.Error("解析token失败:", zap.Error(err))
-		}
-
-		claims, ok := parsedToken.Claims.(jwt.MapClaims)
-		if !ok || !parsedToken.Valid {
-			logger.Error("token不符合规范")
-		}
 		db := utils.GetDB()
-		address := claims["address"].(string)
+		address, err := utils.JwtDecode(jwtToken)
+		if err != nil {
+			logger.Error("failed to get user info:", zap.Error(err))
+			c.Redirect(http.StatusTemporaryRedirect, "/error")
+			return
+		}
 		github := userInfo["login"].(string)
 		email, ok := userInfo["email"].(string)
 		if !ok {
@@ -94,6 +86,37 @@ func main() {
 
 		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social")
 	})
+
+	// github oauth
+	r.GET("/oauth/discord", func(c *gin.Context) {
+		code := c.Query("code")
+		if code == "" {
+			logger.Error("No authorization code provided.")
+			// todo 需要给个error页面
+			c.Redirect(http.StatusTemporaryRedirect, "/error")
+		}
+		token, err := utils.ExchangeCodeForToken(code)
+		if err != nil {
+			logger.Error("Unable to exchange authorization code for access token", zap.Error(err))
+			c.Redirect(http.StatusTemporaryRedirect, "/error")
+			return
+		}
+		user, err := utils.FetchUser(token)
+		if err != nil {
+			logger.Error("Unable to fetch user information:", zap.Error(err))
+			return
+		}
+		fmt.Println(user)
+		// address, err := utils.JwtDecode(jwtToken)
+		if err != nil {
+			logger.Error("failed to get user info:", zap.Error(err))
+			c.Redirect(http.StatusTemporaryRedirect, "/error")
+			return
+		}
+		// fmt.Println(address)
+		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social")
+	})
+
 	r.Run(":8001")
 }
 

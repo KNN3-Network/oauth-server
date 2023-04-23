@@ -29,15 +29,11 @@ func init() {
 
 	consoleDebugging := zapcore.Lock(os.Stdout)
 	consoleEncoder := zapcore.NewConsoleEncoder(encoderCfg)
-	consoleLevel := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-		return lvl < zapcore.WarnLevel
-	})
+	consoleLevel := zapcore.DebugLevel
 	consoleCore := zapcore.NewCore(consoleEncoder, consoleDebugging, consoleLevel)
 
 	fileEncoder := zapcore.NewJSONEncoder(encoderCfg)
-	fileLevel := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-		return lvl < zapcore.WarnLevel
-	})
+	fileLevel := zapcore.DebugLevel
 	fileCore := zapcore.NewCore(fileEncoder, ws, fileLevel)
 
 	// 创建一个新的 Core，将两个子 Core 组合起来
