@@ -13,7 +13,7 @@ func JwtDecode(jwtToken string) (string, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("invalid signing method")
 		}
-		return []byte("my_secret_key"), nil
+		return []byte("KNN3"), nil
 	})
 
 	if err != nil {
