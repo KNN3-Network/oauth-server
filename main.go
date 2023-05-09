@@ -38,53 +38,64 @@ func init() {
 func main() {
 	r := gin.Default()
 
+	r.POST("/oauth/bind", func(c *gin.Context) {
+		jwt := c.PostForm("jwt")
+		code := c.PostForm("code")
+		platformType := c.PostForm("type")
+		if jwt == "" || code == "" || platformType == "" {
+			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("参数错误"))
+			return
+		}
+		db := utils.GetDB()
+		address, err := utils.JwtDecode(jwt)
+		if err != nil {
+			logger.Error("failed to decode jwt:", zap.Error(err))
+			c.Redirect(http.StatusTemporaryRedirect, "/error")
+			return
+		}
+		if platformType == "github" {
+			// 使用OAuth配置对象中定义的Exchange方法，通过code获取access token
+			token, err := githubOauthConfig.Exchange(c, code)
+			if err != nil {
+				logger.Error("failed to exchange token:", zap.Error(err))
+				// todo 需要给个error页面
+				c.Redirect(http.StatusTemporaryRedirect, "/error")
+				return
+			}
+			client := githubOauthConfig.Client(c, token)
+			userInfo, err := getUserInfo(client)
+			if err != nil {
+				logger.Error("failed to get user info:", zap.Error(err))
+				c.Redirect(http.StatusTemporaryRedirect, "/error")
+				return
+			}
+			github := userInfo["login"].(string)
+			email, ok := userInfo["email"].(string)
+			if !ok {
+				email = ""
+			}
+
+			logger.Info("userInfo", zap.Any("user", userInfo))
+			addr := utils.Address{}
+
+			result := db.Model(&addr).Where("addr = ?", address).Updates(map[string]interface{}{"github": github, "email": email})
+			if result.Error != nil {
+				logger.Error("failed to update address:", zap.Error(result.Error))
+			}
+			c.JSON(http.StatusOK, gin.H{"data": "success"})
+		}
+	})
+
 	// github oauth
 	r.GET("/oauth/github", func(c *gin.Context) {
 		code := c.Query("code")
-		jwtToken := c.Query("jwt")
 		if code == "" {
 			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("No authorization code provided."))
 			return
 		}
 		logger.Info("github oauth认证", zap.String("code", code))
-		// 使用OAuth配置对象中定义的Exchange方法，通过code获取access token
-		token, err := githubOauthConfig.Exchange(c, code)
-		if err != nil {
-			logger.Error("failed to exchange token:", zap.Error(err))
-			// todo 需要给个error页面
-			c.Redirect(http.StatusTemporaryRedirect, "/error")
-			return
-		}
-		client := githubOauthConfig.Client(c, token)
-		userInfo, err := getUserInfo(client)
-		if err != nil {
-			logger.Error("failed to get user info:", zap.Error(err))
-			c.Redirect(http.StatusTemporaryRedirect, "/error")
-			return
-		}
 
-		db := utils.GetDB()
-		address, err := utils.JwtDecode(jwtToken)
-		if err != nil {
-			logger.Error("failed to get user info:", zap.Error(err))
-			c.Redirect(http.StatusTemporaryRedirect, "/error")
-			return
-		}
-		github := userInfo["login"].(string)
-		email, ok := userInfo["email"].(string)
-		if !ok {
-			email = ""
-		}
-
-		logger.Info("userInfo", zap.Any("user", userInfo))
-		addr := utils.Address{}
-
-		result := db.Model(&addr).Where("addr = ?", address).Updates(map[string]interface{}{"github": github, "email": email})
-		if result.Error != nil {
-			logger.Error("failed to update address:", zap.Error(result.Error))
-		}
-
-		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social")
+		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social?code="+code)
 	})
 
 	// github oauth
