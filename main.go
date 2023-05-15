@@ -98,6 +98,9 @@ func main() {
 				return
 			}
 			user, err := utils.FetchUser(token)
+			fmt.Println(user)
+			fmt.Println(user.ID)
+			fmt.Println(user.Username)
 			if err != nil {
 				logger.Error("failed to get discord user info:", zap.Error(err))
 				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("获取discord用户信息错误"))
@@ -110,10 +113,10 @@ func main() {
 				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("This discord has bound"))
 				return
 			}
-			logger.Info("userInfo", zap.Any("user", user))
+			logger.Info("userInfo", zap.Any("user", user.ID))
 			addr = utils.Address{}
 
-			result = db.Model(&addr).Where("addr = ?", address).Updates(map[string]interface{}{"discord": user})
+			result = db.Model(&addr).Where("addr = ?", address).Updates(map[string]interface{}{"discord": user.ID})
 			if result.Error != nil {
 				logger.Error("failed to update address:", zap.Error(result.Error))
 				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Update Error"))
