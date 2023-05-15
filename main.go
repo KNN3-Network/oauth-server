@@ -110,7 +110,7 @@ func main() {
 			result := db.Model(&utils.Address{}).Where("discord = ?", user).First(&addr)
 			if addr != (utils.Address{}) {
 				logger.Error("discord has bound:", zap.Error(result.Error))
-				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("This discord has bound"))
+				c.AbortWithError(http.StatusForbidden, fmt.Errorf("This discord has bound"))
 				return
 			}
 			logger.Info("userInfo", zap.Any("user", user.ID))
