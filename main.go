@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/KNN3-Network/oauth-server/utils"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -37,6 +38,7 @@ func init() {
 
 func main() {
 	r := gin.Default()
+	r.Use(cors.Default())
 
 	r.POST("/oauth/bind", func(c *gin.Context) {
 		jwt := c.PostForm("jwt")
