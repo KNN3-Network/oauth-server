@@ -41,9 +41,17 @@ func main() {
 	r.Use(cors.Default())
 
 	r.POST("/oauth/bind", func(c *gin.Context) {
-		jwt := c.PostForm("jwt")
-		code := c.PostForm("code")
-		platformType := c.PostForm("type")
+		var requestBody utils.RequestBody
+		// 将请求体中的 JSON 数据绑定到结构体
+		if err := c.ShouldBindJSON(&requestBody); err != nil {
+			// 处理绑定错误
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		jwt := requestBody.JWT
+		code := requestBody.Code
+		platformType := requestBody.PlatformType
+		fmt.Println(jwt, code, platformType)
 		if jwt == "" || code == "" || platformType == "" {
 			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("参数错误"))
 			return
@@ -76,9 +84,9 @@ func main() {
 				email = ""
 			}
 			addr := utils.Address{}
-			result := db.Model(&utils.Address{}).Where("addr = ?", address).First(&addr)
+			result := db.Model(&utils.Address{}).Where("github = ?", github).First(&addr)
 			// 判断返回结果里面github是不是空
-			if addr.Github != "" {
+			if addr != (utils.Address{}) {
 				logger.Error("github has bound:", zap.Error(result.Error))
 				c.AbortWithError(http.StatusForbidden, fmt.Errorf("This github has bound"))
 				return
@@ -110,8 +118,8 @@ func main() {
 				return
 			}
 			addr := utils.Address{}
-			result := db.Model(&utils.Address{}).Where("addr = ?", address).First(&addr)
-			if addr.Discord != "" {
+			result := db.Model(&utils.Address{}).Where("discord = ?", user.ID).First(&addr)
+			if addr != (utils.Address{}) {
 				logger.Error("discord has bound:", zap.Error(result.Error))
 				c.AbortWithError(http.StatusForbidden, fmt.Errorf("This discord has bound"))
 				return

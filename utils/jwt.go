@@ -6,6 +6,12 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
+type RequestBody struct {
+	JWT          string `json:"jwt"`
+	Code         string `json:"code"`
+	PlatformType string `json:"type"`
+}
+
 func JwtDecode(jwtToken string) (string, error) {
 	// 解析JWT
 	parsedToken, err := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
