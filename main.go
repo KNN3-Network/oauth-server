@@ -65,7 +65,7 @@ func main() {
 			userInfo, err := getUserInfo(client)
 			if err != nil {
 				logger.Error("failed to get user info:", zap.Error(err))
-				c.AbortWithError(http.StatusForbidden, fmt.Errorf("获取github用户信息错误"))
+				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("获取github用户信息错误"))
 				return
 			}
 			github := userInfo["login"].(string)
@@ -77,7 +77,7 @@ func main() {
 			result := db.Model(&utils.Address{}).Where("github = ?", github).First(&addr)
 			if addr != (utils.Address{}) {
 				logger.Error("github has bound:", zap.Error(result.Error))
-				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("This github has bound"))
+				c.AbortWithError(http.StatusForbidden, fmt.Errorf("This github has bound"))
 				return
 			}
 			logger.Info("userInfo", zap.Any("user", userInfo))
