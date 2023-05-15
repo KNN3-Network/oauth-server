@@ -51,7 +51,6 @@ func main() {
 		jwt := requestBody.JWT
 		code := requestBody.Code
 		platformType := requestBody.PlatformType
-		fmt.Println(jwt, code, platformType)
 		if jwt == "" || code == "" || platformType == "" {
 			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("参数错误"))
 			return
@@ -88,7 +87,7 @@ func main() {
 			// 判断返回结果里面github是不是空
 			if addr != (utils.Address{}) {
 				logger.Error("github has bound:", zap.Error(result.Error))
-				c.AbortWithError(http.StatusForbidden, fmt.Errorf("This github has bound"))
+				c.JSON(http.StatusOK, gin.H{"data": "false"})
 				return
 			}
 			logger.Info("userInfo", zap.Any("user", userInfo))
@@ -121,7 +120,7 @@ func main() {
 			result := db.Model(&utils.Address{}).Where("discord = ?", user.ID).First(&addr)
 			if addr != (utils.Address{}) {
 				logger.Error("discord has bound:", zap.Error(result.Error))
-				c.AbortWithError(http.StatusForbidden, fmt.Errorf("This discord has bound"))
+				c.JSON(http.StatusOK, gin.H{"data": "false"})
 				return
 			}
 			logger.Info("userInfo", zap.Any("user", user.ID))
