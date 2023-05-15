@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -22,7 +23,7 @@ func init() {
 	}
 	clientID = os.Getenv("DISCORD_ID")
 	clientSecret = os.Getenv("DISCORD_SECRET")
-	redirectURI = "http://localhost:8001/oauth/discord"
+	redirectURI = "https://knn3-gateway.knn3.xyz/oauth/discord"
 }
 
 func ExchangeCodeForToken(code string) (*oauth2.Token, error) {
@@ -35,6 +36,7 @@ func ExchangeCodeForToken(code string) (*oauth2.Token, error) {
 
 	resp, err := http.PostForm("https://discordapp.com/api/oauth2/token", form)
 	if err != nil {
+		fmt.Println("err:", err)
 		return nil, err
 	}
 	defer resp.Body.Close()

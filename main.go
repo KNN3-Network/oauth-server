@@ -160,6 +160,17 @@ func main() {
 		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass/succss?type=discord&code="+code)
 	})
 
+	r.GET("/oauth/gmail", func(c *gin.Context) {
+		code := c.Query("code")
+		if code == "" {
+			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("No authorization code provided."))
+			return
+		}
+		logger.Info("discord oauth认证", zap.String("code", code))
+
+		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass/succss?type=discord&code="+code)
+	})
+
 	r.Run(":8001")
 }
 
