@@ -132,7 +132,7 @@ func main() {
 		}
 		logger.Info("github oauth认证", zap.String("code", code))
 
-		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social?code="+code)
+		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass/succss?type=github&code="+code)
 	})
 
 	// github oauth
@@ -144,7 +144,7 @@ func main() {
 		}
 		logger.Info("discord oauth认证", zap.String("code", code))
 
-		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social?code="+code)
+		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass/succss?type=discord&code="+code)
 	})
 
 	r.Run(":8001")
