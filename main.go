@@ -74,8 +74,9 @@ func main() {
 				email = ""
 			}
 			addr := utils.Address{}
-			result := db.Model(&utils.Address{}).Where("github = ?", github).First(&addr)
-			if addr != (utils.Address{}) {
+			result := db.Model(&utils.Address{}).Where("addr = ?", address).First(&addr)
+			// 判断返回结果里面github是不是空
+			if addr.Github != "" {
 				logger.Error("github has bound:", zap.Error(result.Error))
 				c.AbortWithError(http.StatusForbidden, fmt.Errorf("This github has bound"))
 				return
@@ -107,8 +108,8 @@ func main() {
 				return
 			}
 			addr := utils.Address{}
-			result := db.Model(&utils.Address{}).Where("discord = ?", user).First(&addr)
-			if addr != (utils.Address{}) {
+			result := db.Model(&utils.Address{}).Where("addr = ?", address).First(&addr)
+			if addr.Discord != "" {
 				logger.Error("discord has bound:", zap.Error(result.Error))
 				c.AbortWithError(http.StatusForbidden, fmt.Errorf("This discord has bound"))
 				return
