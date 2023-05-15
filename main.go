@@ -74,11 +74,17 @@ func main() {
 			if !ok {
 				email = ""
 			}
-
-			logger.Info("userInfo", zap.Any("user", userInfo))
 			addr := utils.Address{}
+			result := db.Model(&utils.Address{}).Where("github = ?", github).First(&addr)
+			if addr != (utils.Address{}) {
+				logger.Error("github has bound:", zap.Error(result.Error))
+				c.Redirect(http.StatusTemporaryRedirect, "/error")
+				return
+			}
+			logger.Info("userInfo", zap.Any("user", userInfo))
+			addr = utils.Address{}
 
-			result := db.Model(&addr).Where("addr = ?", address).Updates(map[string]interface{}{"github": github, "email": email})
+			result = db.Model(&addr).Where("addr = ?", address).Updates(map[string]interface{}{"github": github, "email": email})
 			if result.Error != nil {
 				logger.Error("failed to update address:", zap.Error(result.Error))
 			}
