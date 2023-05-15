@@ -50,7 +50,7 @@ func main() {
 		address, err := utils.JwtDecode(jwt)
 		if err != nil {
 			logger.Error("failed to decode jwt:", zap.Error(err))
-			c.Redirect(http.StatusTemporaryRedirect, "/error")
+			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("解析jwt错误"))
 			return
 		}
 		if platformType == "github" {
@@ -58,15 +58,14 @@ func main() {
 			token, err := githubOauthConfig.Exchange(c, code)
 			if err != nil {
 				logger.Error("failed to exchange token:", zap.Error(err))
-				// todo 需要给个error页面
-				c.Redirect(http.StatusTemporaryRedirect, "/error")
+				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("获取token错误"))
 				return
 			}
 			client := githubOauthConfig.Client(c, token)
 			userInfo, err := getUserInfo(client)
 			if err != nil {
 				logger.Error("failed to get user info:", zap.Error(err))
-				c.Redirect(http.StatusTemporaryRedirect, "/error")
+				c.AbortWithError(http.StatusForbidden, fmt.Errorf("获取github用户信息错误"))
 				return
 			}
 			github := userInfo["login"].(string)
@@ -78,7 +77,7 @@ func main() {
 			result := db.Model(&utils.Address{}).Where("github = ?", github).First(&addr)
 			if addr != (utils.Address{}) {
 				logger.Error("github has bound:", zap.Error(result.Error))
-				c.Redirect(http.StatusTemporaryRedirect, "/error")
+				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("This github has bound"))
 				return
 			}
 			logger.Info("userInfo", zap.Any("user", userInfo))
@@ -87,6 +86,38 @@ func main() {
 			result = db.Model(&addr).Where("addr = ?", address).Updates(map[string]interface{}{"github": github, "email": email})
 			if result.Error != nil {
 				logger.Error("failed to update address:", zap.Error(result.Error))
+				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Update Error"))
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{"data": "success"})
+		} else if platformType == "discord" {
+			token, err := utils.ExchangeCodeForToken(code)
+			if err != nil {
+				logger.Error("failed to exchange discord token:", zap.Error(err))
+				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("获取token错误"))
+				return
+			}
+			user, err := utils.FetchUser(token)
+			if err != nil {
+				logger.Error("failed to get discord user info:", zap.Error(err))
+				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("获取discord用户信息错误"))
+				return
+			}
+			addr := utils.Address{}
+			result := db.Model(&utils.Address{}).Where("discord = ?", user).First(&addr)
+			if addr != (utils.Address{}) {
+				logger.Error("discord has bound:", zap.Error(result.Error))
+				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("This discord has bound"))
+				return
+			}
+			logger.Info("userInfo", zap.Any("user", user))
+			addr = utils.Address{}
+
+			result = db.Model(&addr).Where("addr = ?", address).Updates(map[string]interface{}{"discord": user})
+			if result.Error != nil {
+				logger.Error("failed to update address:", zap.Error(result.Error))
+				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Update Error"))
+				return
 			}
 			c.JSON(http.StatusOK, gin.H{"data": "success"})
 		}
@@ -108,30 +139,12 @@ func main() {
 	r.GET("/oauth/discord", func(c *gin.Context) {
 		code := c.Query("code")
 		if code == "" {
-			logger.Error("No authorization code provided.")
-			// todo 需要给个error页面
-			c.Redirect(http.StatusTemporaryRedirect, "/error")
-		}
-		token, err := utils.ExchangeCodeForToken(code)
-		if err != nil {
-			logger.Error("Unable to exchange authorization code for access token", zap.Error(err))
-			c.Redirect(http.StatusTemporaryRedirect, "/error")
+			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("No authorization code provided."))
 			return
 		}
-		user, err := utils.FetchUser(token)
-		if err != nil {
-			logger.Error("Unable to fetch user information:", zap.Error(err))
-			return
-		}
-		fmt.Println(user)
-		// address, err := utils.JwtDecode(jwtToken)
-		if err != nil {
-			logger.Error("failed to get user info:", zap.Error(err))
-			c.Redirect(http.StatusTemporaryRedirect, "/error")
-			return
-		}
-		// fmt.Println(address)
-		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social")
+		logger.Info("discord oauth认证", zap.String("code", code))
+
+		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social?code="+code)
 	})
 
 	r.Run(":8001")
