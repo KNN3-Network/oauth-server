@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/KNN3-Network/oauth-server/utils"
 	"github.com/gin-gonic/gin"
@@ -19,6 +20,7 @@ var (
 	stackoverflowConfig *oauth2.Config
 )
 
+// init
 func init() {
 
 	stackoverflowConfig = &oauth2.Config{
@@ -98,22 +100,35 @@ func (sf Stackoverflow) Bind(c *gin.Context, code string, address string) {
 	// get stackexchange id
 	stackexchangeId := userInfo["items"].([]interface{})[0].(map[string]interface{})["account_id"].(float64)
 
+	logger.Info("Stackoverflow stackexchangeId", zap.Float64("stackexchangeId", stackexchangeId))
+
 	db := utils.GetDB()
 
-	addr := utils.Address{}
-	result := db.Model(&utils.Address{}).Where("stackexchange = ?", stackexchangeId).First(&addr)
-	// check result
-	if addr != (utils.Address{}) {
+	addr := utils.OauthBind{}
+	result := db.Model(&utils.OauthBind{}).Where("exchange = ?", stackexchangeId).First(&addr)
+	if addr != (utils.OauthBind{}) {
 		logger.Error("stackoverflow has bound:", zap.Error(result.Error))
 		c.JSON(http.StatusOK, gin.H{"data": "stackoverflow has bound"})
 		return
 	}
 
-	result = db.Model(&addr).Where("addr = ?", address).Updates(map[string]interface{}{"stackexchange": stackexchangeId})
-	if result.Error != nil {
-		logger.Error("failed to update address:", zap.Error(result.Error))
-		c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Stackexchange Update Error"))
-		return
+	bind := utils.OauthBind{}
+	result = db.Model(&utils.OauthBind{}).Where("addr = ?", address).First(&bind)
+	// 判断返回结果里面address是不是空
+	if bind != (utils.OauthBind{}) {
+		result = db.Model(&bind).Where("addr = ?", address).Updates(map[string]interface{}{"exchange": stackexchangeId})
+		if result.Error != nil {
+			logger.Error("failed to update address:", zap.Error(result.Error))
+			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Stackexchange Update Error"))
+			return
+		}
+	} else {
+		result = db.Model(&utils.OauthBind{}).Create(&utils.OauthBind{Addr: address, Exchange: strconv.FormatFloat(stackexchangeId, 'f', -1, 64)})
+		if result.Error != nil {
+			logger.Error("failed to insert oauth_bind:", zap.Error(result.Error))
+			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Insert Error"))
+			return
+		}
 	}
 	c.JSON(http.StatusOK, gin.H{"data": "success"})
 
