@@ -114,5 +114,5 @@ func RedirectGithubLogin(c *gin.Context, code string) {
 	http.SetCookie(c.Writer, cookie)
 
 	// 重定向到目标 URL
-	c.Redirect(http.StatusFound, transformer_url)
+	c.Redirect(http.StatusFound, "https://transformer.knn3.xyz/")
 }
