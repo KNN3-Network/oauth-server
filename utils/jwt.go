@@ -13,6 +13,11 @@ type RequestBody struct {
 	PlatformType string `json:"type"`
 }
 
+type RequestLoginBody struct {
+	Code         string `json:"code"`
+	PlatformType string `json:"type"`
+}
+
 func JwtDecode(jwtToken string) (string, error) {
 	// 解析JWT
 	parsedToken, err := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {

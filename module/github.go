@@ -68,7 +68,7 @@ func RequestGithubUserInfo(c *gin.Context, code string) (map[string]interface{},
 	return userInfo, nil
 }
 
-func RedirectGithubLogin(c *gin.Context, code string) {
+func GithubLogin(c *gin.Context, code string) {
 	userInfo, err := RequestGithubUserInfo(c, code)
 	if err != nil {
 		logger.Error("failed to get user info:", zap.Error(err))
@@ -107,12 +107,12 @@ func RedirectGithubLogin(c *gin.Context, code string) {
 	fmt.Printf("JWT: %s\n", respData.JWT)
 	// 设置 Cookie
 	cookie := &http.Cookie{
-		Name:  "jwt",
-		Value: respData.JWT,
-		Path:  "/",
+		Name:     "JWT",
+		Value:    respData.JWT,
+		Path:     "/",
+		HttpOnly: true,
 	}
 	http.SetCookie(c.Writer, cookie)
 
-	// 重定向到目标 URL
-	c.Redirect(http.StatusFound, "https://transformer.knn3.xyz/")
+	c.JSON(http.StatusOK, gin.H{"data": "success"})
 }

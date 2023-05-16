@@ -126,6 +126,28 @@ func main() {
 		}
 	})
 
+	r.POST("/oauth/login", func(c *gin.Context) {
+		var requestBody utils.RequestLoginBody
+		// 将请求体中的 JSON 数据绑定到结构体
+		if err := c.ShouldBindJSON(&requestBody); err != nil {
+			// 处理绑定错误
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		code := requestBody.Code
+		platformType := requestBody.PlatformType
+		if code == "" || platformType == "" {
+			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("参数错误"))
+			return
+		}
+		if platformType == "github" {
+			module.GithubLogin(c, code)
+		} else {
+			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("平台不支持"))
+			return
+		}
+	})
+
 	// github oauth
 	r.GET("/oauth/github", func(c *gin.Context) {
 		code := c.Query("code")
@@ -136,7 +158,7 @@ func main() {
 		}
 		logger.Info("github oauth认证", zap.String("code", code))
 		if source == "login" { // 使用OAuth配置对象中定义的Exchange方法，通过code获取access token
-			module.RedirectGithubLogin(c, code)
+			c.Redirect(http.StatusTemporaryRedirect, "https://transformer.knn3.xyz/sqlPlayGround?type=github&code="+code)
 		} else {
 			c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass/succss?type=github&code="+code)
 		}
