@@ -114,19 +114,19 @@ func (sf Stackoverflow) Bind(c *gin.Context, code string, address string) {
 
 	bind := utils.OauthBind{}
 	result = db.Model(&utils.OauthBind{}).Where("addr = ?", address).First(&bind)
-	// 判断返回结果里面address是不是空
+	// check address
 	if bind != (utils.OauthBind{}) {
 		result = db.Model(&bind).Where("addr = ?", address).Updates(map[string]interface{}{"exchange": stackexchangeId})
 		if result.Error != nil {
 			logger.Error("failed to update address:", zap.Error(result.Error))
-			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Stackexchange Update Error"))
+			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("stackexchange update error"))
 			return
 		}
 	} else {
 		result = db.Model(&utils.OauthBind{}).Create(&utils.OauthBind{Addr: address, Exchange: strconv.FormatFloat(stackexchangeId, 'f', -1, 64)})
 		if result.Error != nil {
 			logger.Error("failed to insert oauth_bind:", zap.Error(result.Error))
-			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Insert Error"))
+			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("insert error"))
 			return
 		}
 	}
