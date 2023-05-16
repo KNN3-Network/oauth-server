@@ -13,11 +13,12 @@ import (
 var db *gorm.DB
 
 type Address struct {
-	Addr    string `json:"addr" gorm:"column:addr;primaryKey"`
-	Name    string `json:"name"`
-	Github  string `json:"github"`
-	Email   string `json:"email"`
-	Discord string `json:"discord"`
+	Addr          string `json:"addr" gorm:"column:addr;primaryKey"`
+	Name          string `json:"name"`
+	Github        string `json:"github"`
+	Email         string `json:"email"`
+	Discord       string `json:"discord"`
+	Stackexchange string `json:"stackexchange"`
 }
 
 func (Address) TableName() string {
