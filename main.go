@@ -130,7 +130,7 @@ func main() {
 			}
 			logger.Info("userInfo", zap.Any("user", user.ID))
 			bind := utils.OauthBind{}
-			result = db.Model(&utils.OauthBind{}).Where("addr = ?", address).First(&addr)
+			result = db.Model(&utils.OauthBind{}).Where("addr = ?", address).First(&bind)
 			// 判断返回结果里面address是不是空
 			if bind != (utils.OauthBind{}) {
 				result = db.Model(&bind).Where("addr = ?", address).Updates(map[string]interface{}{"discord": user.ID})
