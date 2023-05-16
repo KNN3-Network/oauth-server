@@ -82,7 +82,7 @@ func (sf Stackoverflow) Bind(c *gin.Context, code string, address string) {
 	if err != nil {
 		logger.Error("Stackoverflow failed to exchange token:", zap.Error(err))
 		// Redirect error page
-		c.Redirect(http.StatusTemporaryRedirect, "/error")
+		c.AbortWithError(http.StatusBadRequest, fmt.Errorf("error code"))
 		return
 	}
 
@@ -90,7 +90,7 @@ func (sf Stackoverflow) Bind(c *gin.Context, code string, address string) {
 	userInfo, err := sf.UserInfo(client, token.AccessToken)
 	if err != nil {
 		logger.Error("failed to get user info:", zap.Error(err))
-		c.Redirect(http.StatusTemporaryRedirect, "/error")
+		c.AbortWithError(http.StatusBadRequest, fmt.Errorf("error userInfo"))
 		return
 	}
 	// logger.Info("Stackoverflow userInfo", zap.Any("userInfo", &userInfo))
