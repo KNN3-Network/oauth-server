@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/KNN3-Network/oauth-server/module"
 	"github.com/KNN3-Network/oauth-server/utils"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -21,6 +22,8 @@ var logger = utils.Logger
 var (
 	githubOauthConfig *oauth2.Config
 )
+
+var stackoverflow = new(module.Stackoverflow)
 
 func init() {
 	err := godotenv.Load()
@@ -57,6 +60,8 @@ func main() {
 		}
 		db := utils.GetDB()
 		address, err := utils.JwtDecode(jwt)
+		logger.Info("JwtDecode address", zap.Any("address", address))
+
 		if err != nil {
 			logger.Error("failed to decode jwt:", zap.Error(err))
 			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("解析jwt错误"))
@@ -149,6 +154,13 @@ func main() {
 			}
 			c.JSON(http.StatusOK, gin.H{"data": "success"})
 		}
+
+		switch platformType {
+		case "stackexchange":
+			stackoverflow.Bind(c, code, address)
+		default:
+			logger.Info("error platformType", zap.String("platformType", platformType))
+		}
 	})
 
 	// github oauth
@@ -186,6 +198,15 @@ func main() {
 
 		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass/succss?type=gmail&code="+code)
 	})
+
+	// stackoverflow
+	v1 := r.Group("/oauth/stackoverflow")
+	{
+		// stackoverflow := new(module.Stackoverflow)
+		v1.GET("/authcodeurl", stackoverflow.AuthCodeURL)
+		v1.GET("/", stackoverflow.CallBack)
+
+	}
 
 	r.Run(":8001")
 }
