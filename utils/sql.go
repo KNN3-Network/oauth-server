@@ -12,16 +12,16 @@ import (
 
 var db *gorm.DB
 
-type Address struct {
-	Addr    string `json:"addr" gorm:"column:addr;primaryKey"`
-	Name    string `json:"name"`
-	Github  string `json:"github"`
-	Email   string `json:"email"`
-	Discord string `json:"discord"`
+type OauthBind struct {
+	Addr     string `json:"addr" gorm:"column:addr;primaryKey"`
+	Github   string `json:"github"`
+	Gmail    string `json:"gmail"`
+	Discord  string `json:"discord"`
+	Exchange string `json:"exchange"`
 }
 
-func (Address) TableName() string {
-	return "addr"
+func (OauthBind) TableName() string {
+	return "oauth_bind"
 }
 
 func init() {

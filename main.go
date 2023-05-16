@@ -78,27 +78,35 @@ func main() {
 				return
 			}
 			github := userInfo["login"].(string)
-			email, ok := userInfo["email"].(string)
-			if !ok {
-				email = ""
-			}
-			addr := utils.Address{}
-			result := db.Model(&utils.Address{}).Where("github = ?", github).First(&addr)
+			bind := utils.OauthBind{}
+			result := db.Model(&utils.OauthBind{}).Where("github = ?", github).First(&bind)
 			// 判断返回结果里面github是不是空
-			if addr != (utils.Address{}) {
+			if bind != (utils.OauthBind{}) {
 				logger.Error("github has bound:", zap.Error(result.Error))
 				c.JSON(http.StatusOK, gin.H{"data": "false"})
 				return
 			}
 			logger.Info("userInfo", zap.Any("user", userInfo))
-			addr = utils.Address{}
-
-			result = db.Model(&addr).Where("addr = ?", address).Updates(map[string]interface{}{"github": github, "email": email})
-			if result.Error != nil {
-				logger.Error("failed to update address:", zap.Error(result.Error))
-				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Update Error"))
-				return
+			bind = utils.OauthBind{}
+			result = db.Model(&utils.OauthBind{}).Where("addr = ?", address).First(&bind)
+			// 判断返回结果里面address是不是空
+			if bind != (utils.OauthBind{}) {
+				result = db.Model(&bind).Where("addr = ?", address).Updates(map[string]interface{}{"github": github})
+				if result.Error != nil {
+					logger.Error("failed to update address:", zap.Error(result.Error))
+					c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Update Error"))
+					return
+				}
+			} else {
+				// insert into oauth_binds (addr, github) values (address, github)
+				result = db.Model(&utils.OauthBind{}).Create(&utils.OauthBind{Addr: address, Github: github})
+				if result.Error != nil {
+					logger.Error("failed to insert oauth_bind:", zap.Error(result.Error))
+					c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Insert Error"))
+					return
+				}
 			}
+
 			c.JSON(http.StatusOK, gin.H{"data": "success"})
 		} else if platformType == "discord" {
 			token, err := utils.ExchangeCodeForToken(code)
@@ -108,29 +116,36 @@ func main() {
 				return
 			}
 			user, err := utils.FetchUser(token)
-			fmt.Println(user)
-			fmt.Println(user.ID)
-			fmt.Println(user.Username)
 			if err != nil {
 				logger.Error("failed to get discord user info:", zap.Error(err))
 				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("获取discord用户信息错误"))
 				return
 			}
-			addr := utils.Address{}
-			result := db.Model(&utils.Address{}).Where("discord = ?", user.ID).First(&addr)
-			if addr != (utils.Address{}) {
+			addr := utils.OauthBind{}
+			result := db.Model(&utils.OauthBind{}).Where("discord = ?", user.ID).First(&addr)
+			if addr != (utils.OauthBind{}) {
 				logger.Error("discord has bound:", zap.Error(result.Error))
 				c.JSON(http.StatusOK, gin.H{"data": "false"})
 				return
 			}
 			logger.Info("userInfo", zap.Any("user", user.ID))
-			addr = utils.Address{}
-
-			result = db.Model(&addr).Where("addr = ?", address).Updates(map[string]interface{}{"discord": user.ID})
-			if result.Error != nil {
-				logger.Error("failed to update address:", zap.Error(result.Error))
-				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Update Error"))
-				return
+			bind := utils.OauthBind{}
+			result = db.Model(&utils.OauthBind{}).Where("addr = ?", address).First(&addr)
+			// 判断返回结果里面address是不是空
+			if bind != (utils.OauthBind{}) {
+				result = db.Model(&bind).Where("addr = ?", address).Updates(map[string]interface{}{"discord": user.ID})
+				if result.Error != nil {
+					logger.Error("failed to update address:", zap.Error(result.Error))
+					c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Update Error"))
+					return
+				}
+			} else {
+				result = db.Model(&utils.OauthBind{}).Create(&utils.OauthBind{Addr: address, Discord: user.ID})
+				if result.Error != nil {
+					logger.Error("failed to insert oauth_bind:", zap.Error(result.Error))
+					c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Insert Error"))
+					return
+				}
 			}
 			c.JSON(http.StatusOK, gin.H{"data": "success"})
 		}
@@ -162,13 +177,14 @@ func main() {
 
 	r.GET("/oauth/gmail", func(c *gin.Context) {
 		code := c.Query("code")
-		if code == "" {
+		state := c.Query("state")
+		if code == "" || state == "" {
 			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("No authorization code provided."))
 			return
 		}
 		logger.Info("discord oauth认证", zap.String("code", code))
 
-		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass/succss?type=discord&code="+code)
+		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass/succss?type=gmail&code="+code)
 	})
 
 	r.Run(":8001")
