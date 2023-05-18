@@ -157,10 +157,11 @@ func main() {
 			return
 		}
 		logger.Info("github oauth认证", zap.String("code", code))
+
 		if source == "login" { // 使用OAuth配置对象中定义的Exchange方法，通过code获取access token
 			c.Redirect(http.StatusTemporaryRedirect, "https://transformer.knn3.xyz/sqlPlayGround?type=github&code="+code)
 		} else {
-			c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass/succss?type=github&code="+code)
+			c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass?type=github&code="+code)
 		}
 	})
 
@@ -173,7 +174,7 @@ func main() {
 		}
 		logger.Info("discord oauth认证", zap.String("code", code))
 
-		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass/succss?type=discord&code="+code)
+		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass?type=discord&code="+code)
 	})
 
 	r.GET("/oauth/gmail", func(c *gin.Context) {
@@ -185,7 +186,7 @@ func main() {
 		}
 		logger.Info("discord oauth认证", zap.String("code", code))
 
-		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass/succss?type=gmail&code="+code)
+		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass?type=gmail&code="+code)
 	})
 
 	// stackoverflow
