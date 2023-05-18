@@ -13,11 +13,12 @@ import (
 var db *gorm.DB
 
 type OauthBind struct {
-	Addr     string `json:"addr" gorm:"column:addr;primaryKey"`
-	Github   string `json:"github"`
-	Gmail    string `json:"gmail"`
-	Discord  string `json:"discord"`
-	Exchange string `json:"exchange"`
+	Addr        string `json:"addr" gorm:"column:addr;primaryKey"`
+	Github      string `json:"github"`
+	Gmail       string `json:"gmail"`
+	Discord     string `json:"discord"`
+	DiscordName string `json:"discord_name"`
+	Exchange    string `json:"exchange"`
 }
 
 func (OauthBind) TableName() string {

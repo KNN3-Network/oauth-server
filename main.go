@@ -106,7 +106,7 @@ func main() {
 			result = db.Model(&utils.OauthBind{}).Where("addr = ?", address).First(&bind)
 			// 判断返回结果里面address是不是空
 			if bind != (utils.OauthBind{}) {
-				result = db.Model(&bind).Where("addr = ?", address).Updates(map[string]interface{}{"discord": user.ID})
+				result = db.Model(&bind).Where("addr = ?", address).Updates(map[string]interface{}{"discord": user.ID, "discord_name": user.Username})
 				if result.Error != nil {
 					logger.Error("failed to update address:", zap.Error(result.Error))
 					c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Update Error"))
