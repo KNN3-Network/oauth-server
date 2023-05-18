@@ -62,7 +62,7 @@ func (sf Stackoverflow) CallBack(c *gin.Context) {
 	}
 	logger.Info("stackoverflow oauth", zap.String("code", code))
 
-	c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass/succss?type=stackexchange&code="+code)
+	c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass?type=stackexchange&code="+code)
 }
 
 // Bind
