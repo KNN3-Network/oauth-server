@@ -161,7 +161,7 @@ func main() {
 		if source == "login" { // 使用OAuth配置对象中定义的Exchange方法，通过code获取access token
 			c.Redirect(http.StatusTemporaryRedirect, "https://transformer.knn3.xyz/sqlPlayGround?type=github&code="+code)
 		} else {
-			c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass/succss?type=github&code="+code)
+			c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass?type=github&code="+code)
 		}
 	})
 
