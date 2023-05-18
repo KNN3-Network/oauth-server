@@ -1,43 +1,19 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
-	"os"
 
 	"github.com/KNN3-Network/oauth-server/module"
 	"github.com/KNN3-Network/oauth-server/utils"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	"go.uber.org/zap"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/github"
 )
 
 var logger = utils.Logger
 
-var (
-	githubOauthConfig *oauth2.Config
-)
-
 var stackoverflow = new(module.Stackoverflow)
-
-func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-	githubOauthConfig = &oauth2.Config{
-		ClientID:     os.Getenv("CLIENT_ID"),
-		ClientSecret: os.Getenv("CLIENT_SECRET"),
-		RedirectURL:  os.Getenv("REDIRECT_URL"),
-		Scopes:       []string{"read:user", "user:email"}, // 请求用户信息和邮箱权限
-		Endpoint:     github.Endpoint,
-	}
-}
 
 func main() {
 	r := gin.Default()
@@ -68,15 +44,7 @@ func main() {
 			return
 		}
 		if platformType == "github" {
-			// 使用OAuth配置对象中定义的Exchange方法，通过code获取access token
-			token, err := githubOauthConfig.Exchange(c, code)
-			if err != nil {
-				logger.Error("failed to exchange token:", zap.Error(err))
-				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("获取token错误"))
-				return
-			}
-			client := githubOauthConfig.Client(c, token)
-			userInfo, err := getUserInfo(client)
+			userInfo, err := module.RequestGithubUserInfo(c, code)
 			if err != nil {
 				logger.Error("failed to get user info:", zap.Error(err))
 				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("获取github用户信息错误"))
@@ -114,13 +82,13 @@ func main() {
 
 			c.JSON(http.StatusOK, gin.H{"data": "success"})
 		} else if platformType == "discord" {
-			token, err := utils.ExchangeCodeForToken(code)
+			token, err := module.ExchangeCodeForToken(code)
 			if err != nil {
 				logger.Error("failed to exchange discord token:", zap.Error(err))
 				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("获取token错误"))
 				return
 			}
-			user, err := utils.FetchUser(token)
+			user, err := module.FetchUser(token)
 			if err != nil {
 				logger.Error("failed to get discord user info:", zap.Error(err))
 				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("获取discord用户信息错误"))
@@ -153,26 +121,48 @@ func main() {
 				}
 			}
 			c.JSON(http.StatusOK, gin.H{"data": "success"})
-		}
-
-		switch platformType {
-		case "stackexchange":
+		} else if platformType == "stackexchange" {
 			stackoverflow.Bind(c, code, address)
-		default:
-			logger.Info("error platformType", zap.String("platformType", platformType))
+		}
+	})
+
+	r.POST("/oauth/login", func(c *gin.Context) {
+		var requestBody utils.RequestLoginBody
+		// 将请求体中的 JSON 数据绑定到结构体
+		if err := c.ShouldBindJSON(&requestBody); err != nil {
+			// 处理绑定错误
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		code := requestBody.Code
+		platformType := requestBody.PlatformType
+		if code == "" || platformType == "" {
+			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("参数错误"))
+			return
+		}
+		if platformType == "github" {
+			module.GithubLogin(c, code)
+		} else {
+			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("平台不支持"))
+			return
 		}
 	})
 
 	// github oauth
 	r.GET("/oauth/github", func(c *gin.Context) {
 		code := c.Query("code")
+		source := c.Query("source")
 		if code == "" {
 			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("No authorization code provided."))
 			return
 		}
 		logger.Info("github oauth认证", zap.String("code", code))
 
-		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass?type=github&code="+code)
+		if source == "login" { // 使用OAuth配置对象中定义的Exchange方法，通过code获取access token
+			c.Redirect(http.StatusTemporaryRedirect, "https://transformer.knn3.xyz/sqlPlayGround?type=github&code="+code)
+		} else {
+			c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass/succss?type=github&code="+code)
+		}
 	})
 
 	// github oauth
@@ -209,38 +199,4 @@ func main() {
 	}
 
 	r.Run(":8001")
-}
-
-func getUserInfo(client *http.Client) (map[string]interface{}, error) {
-	req, err := http.NewRequest("GET", "https://api.github.com/user", nil)
-	if err != nil {
-		return nil, fmt.Errorf("get user info request failed: %w", err)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("get user info request failed: %w", err)
-	}
-
-	defer resp.Body.Close()
-
-	var userInfo map[string]interface{}
-	if err := decodeResponse(resp, &userInfo); err != nil {
-		return nil, err
-	}
-
-	return userInfo, nil
-}
-
-// 辅助函数，用于从HTTP响应中反序列化JSON
-func decodeResponse(resp *http.Response, v interface{}) error {
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(v); err != nil {
-		return fmt.Errorf("failed to decode response body: %w", err)
-	}
-
-	return nil
 }
