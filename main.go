@@ -102,6 +102,8 @@ func main() {
 				return
 			}
 			logger.Info("userInfo", zap.Any("user", user.ID))
+			logger.Info("discord username", zap.Any("username", user.Username))
+			logger.Info("discord avatar", zap.Any("user", user.Avatar))
 			bind := utils.OauthBind{}
 			result = db.Model(&utils.OauthBind{}).Where("addr = ?", address).First(&bind)
 			// 判断返回结果里面address是不是空
