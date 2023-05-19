@@ -69,8 +69,18 @@ func RequestGithubUserInfo(c *gin.Context, code string) (map[string]interface{},
 }
 
 func GithubLogin(c *gin.Context, code string) {
+	defer func() {
+		if err := recover(); err != nil {
+			if e, ok := err.(error); ok {
+				logger.Error("failed to github login:", zap.Error(e))
+				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("github登录错误"))
+			} else {
+				logger.Error("failed to github login:", zap.Any("error", err))
+				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("github登录错误"))
+			}
+		}
+	}()
 	userInfo, err := RequestGithubUserInfo(c, code)
-	try{
 	if err != nil {
 		logger.Error("failed to get user info:", zap.Error(err))
 		c.AbortWithError(http.StatusBadRequest, fmt.Errorf("获取github用户信息错误"))
@@ -108,8 +118,4 @@ func GithubLogin(c *gin.Context, code string) {
 	fmt.Printf("JWT: %s\n", respData.JWT)
 	// 返回响应数据为 json, {github,jwt:respData.JWT}
 	c.JSON(http.StatusOK, gin.H{"github": github, "jwt": respData.JWT})
-	}catch(err){
-		logger.Error("failed to github login:", zap.Error(err))
-		c.AbortWithError(http.StatusBadRequest, fmt.Errorf("github登录错误"))
-	}
 }
