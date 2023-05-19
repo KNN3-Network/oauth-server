@@ -70,6 +70,7 @@ func RequestGithubUserInfo(c *gin.Context, code string) (map[string]interface{},
 
 func GithubLogin(c *gin.Context, code string) {
 	userInfo, err := RequestGithubUserInfo(c, code)
+	try{
 	if err != nil {
 		logger.Error("failed to get user info:", zap.Error(err))
 		c.AbortWithError(http.StatusBadRequest, fmt.Errorf("获取github用户信息错误"))
@@ -105,14 +106,10 @@ func GithubLogin(c *gin.Context, code string) {
 	}
 	// 输出响应数据中的 JWT 字段
 	fmt.Printf("JWT: %s\n", respData.JWT)
-	// 设置 Cookie
-	cookie := &http.Cookie{
-		Name:     "JWT",
-		Value:    respData.JWT,
-		Path:     "/",
-		HttpOnly: true,
+	// 返回响应数据为 json, {github,jwt:respData.JWT}
+	c.JSON(http.StatusOK, gin.H{"github": github, "jwt": respData.JWT})
+	}catch(err){
+		logger.Error("failed to github login:", zap.Error(err))
+		c.AbortWithError(http.StatusBadRequest, fmt.Errorf("github登录错误"))
 	}
-	http.SetCookie(c.Writer, cookie)
-
-	c.JSON(http.StatusOK, gin.H{"data": "success"})
 }
