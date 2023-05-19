@@ -115,7 +115,7 @@ func main() {
 					return
 				}
 			} else {
-				result = db.Model(&utils.OauthBind{}).Create(&utils.OauthBind{Addr: address, Discord: user.ID})
+				result = db.Model(&utils.OauthBind{}).Create(&utils.OauthBind{Addr: address, Discord: user.ID, DiscordName: user.Username})
 				if result.Error != nil {
 					logger.Error("failed to insert oauth_bind:", zap.Error(result.Error))
 					c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Insert Error"))
