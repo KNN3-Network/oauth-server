@@ -99,6 +99,7 @@ func (sf Stackoverflow) Bind(c *gin.Context, code string, address string) {
 
 	// get stackexchange id
 	stackexchangeId := userInfo["items"].([]interface{})[0].(map[string]interface{})["account_id"].(float64)
+	exchangeName := userInfo["items"].([]interface{})[0].(map[string]interface{})["display_name"].(string)
 
 	logger.Info("Stackoverflow stackexchangeId", zap.Float64("stackexchangeId", stackexchangeId))
 
@@ -116,14 +117,14 @@ func (sf Stackoverflow) Bind(c *gin.Context, code string, address string) {
 	result = db.Model(&utils.OauthBind{}).Where("addr = ?", address).First(&bind)
 	// check address
 	if bind != (utils.OauthBind{}) {
-		result = db.Model(&bind).Where("addr = ?", address).Updates(map[string]interface{}{"exchange": stackexchangeId})
+		result = db.Model(&bind).Where("addr = ?", address).Updates(map[string]interface{}{"exchange": stackexchangeId, "exchange_name": exchangeName})
 		if result.Error != nil {
 			logger.Error("failed to update address:", zap.Error(result.Error))
 			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("stackexchange update error"))
 			return
 		}
 	} else {
-		result = db.Model(&utils.OauthBind{}).Create(&utils.OauthBind{Addr: address, Exchange: strconv.FormatFloat(stackexchangeId, 'f', -1, 64)})
+		result = db.Model(&utils.OauthBind{}).Create(&utils.OauthBind{Addr: address, Exchange: strconv.FormatFloat(stackexchangeId, 'f', -1, 64), ExchangeName: exchangeName})
 		if result.Error != nil {
 			logger.Error("failed to insert oauth_bind:", zap.Error(result.Error))
 			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("insert error"))
