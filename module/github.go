@@ -22,7 +22,8 @@ var (
 )
 
 var respData struct {
-	JWT string `json:"jwt"`
+	Token string `json:"token"`
+	Email string `json:"email"`
 }
 
 func init() {
@@ -98,7 +99,7 @@ func GithubLogin(c *gin.Context, code string) {
 	// 构建请求体数据
 	requestBody := map[string]string{
 		"third_party_type": "github",
-		"id":               github,
+		"third_party_id":   github,
 	}
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {
@@ -122,7 +123,7 @@ func GithubLogin(c *gin.Context, code string) {
 		return
 	}
 	// 输出响应数据中的 JWT 字段
-	fmt.Printf("JWT: %s\n", respData.JWT)
+	fmt.Printf("JWT: %s\n", respData.Token)
 	// 返回响应数据为 json, {github,jwt:respData.JWT}
-	c.JSON(http.StatusOK, gin.H{"github": github, "jwt": respData.JWT})
+	c.JSON(http.StatusOK, gin.H{"github": github, "jwt": respData.Token})
 }
