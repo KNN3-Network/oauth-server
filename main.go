@@ -125,6 +125,39 @@ func main() {
 			c.JSON(http.StatusOK, gin.H{"data": "success"})
 		} else if platformType == "stackexchange" {
 			stackoverflow.Bind(c, code, address)
+		} else if platformType == "gmail" {
+			profile, err := module.GetGmailProfile(code)
+			if err != nil {
+				logger.Error("failed to exchange gmail token:", zap.Error(err))
+				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("获取token错误"))
+				return
+			}
+			addr := utils.OauthBind{}
+			result := db.Model(&utils.OauthBind{}).Where("gmail = ?", profile.EmailAddress).First(&addr)
+			if addr != (utils.OauthBind{}) {
+				logger.Error("gmail has bound:", zap.Error(result.Error))
+				c.JSON(http.StatusOK, gin.H{"data": "false"})
+				return
+			}
+			bind := utils.OauthBind{}
+			result = db.Model(&utils.OauthBind{}).Where("addr = ?", address).First(&bind)
+			// 判断返回结果里面address是不是空
+			if bind != (utils.OauthBind{}) {
+				result = db.Model(&bind).Where("addr = ?", address).Updates(map[string]interface{}{"gmail": profile.EmailAddress})
+				if result.Error != nil {
+					logger.Error("failed to update address:", zap.Error(result.Error))
+					c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Update Error"))
+					return
+				}
+			} else {
+				result = db.Model(&utils.OauthBind{}).Create(&utils.OauthBind{Addr: address, Gmail: profile.EmailAddress})
+				if result.Error != nil {
+					logger.Error("failed to insert oauth_bind:", zap.Error(result.Error))
+					c.AbortWithError(http.StatusBadRequest, fmt.Errorf("Insert Error"))
+					return
+				}
+			}
+			c.JSON(http.StatusOK, gin.H{"data": "success"})
 		}
 	})
 
@@ -188,7 +221,7 @@ func main() {
 			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("No authorization code provided."))
 			return
 		}
-		logger.Info("discord oauth认证", zap.String("code", code))
+		logger.Info("gmail oauth认证", zap.String("code", code))
 
 		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass?type=gmail&code="+code)
 	})

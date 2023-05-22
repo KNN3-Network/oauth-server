@@ -24,9 +24,9 @@ func init() {
 		log.Fatal("Error loading .env file")
 	}
 	oauthConfig = &oauth2.Config{
-		ClientID:     os.Getenv("GMAIL_ID"),               // 替换为实际的客户端ID
-		ClientSecret: os.Getenv("GMAIL_SECRET"),           // 替换为实际的客户端密钥
-		RedirectURL:  "http://localhost:8001/oauth/gmail", // 替换为实际的回调URL
+		ClientID:     os.Getenv("GMAIL_ID"),                       // 替换为实际的客户端ID
+		ClientSecret: os.Getenv("GMAIL_SECRET"),                   // 替换为实际的客户端密钥
+		RedirectURL:  "https://knn3-gateway.knn3.xyz/oauth/gmail", // 替换为实际的回调URL
 		Scopes: []string{
 			gmail.GmailReadonlyScope,
 		},
