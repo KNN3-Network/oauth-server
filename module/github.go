@@ -1,6 +1,7 @@
 package module
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -94,14 +95,20 @@ func GithubLogin(c *gin.Context, code string) {
 		fmt.Printf("Error parsing URL: %v\n", err)
 		return
 	}
-	// 构建查询参数
-	queryParams := url.Values{}
-	queryParams.Add("type", "github")
-	queryParams.Add("id", github)
-	reqURL.RawQuery = queryParams.Encode()
+	// 构建请求体数据
+	requestBody := map[string]string{
+		"third_party_type": "github",
+		"id":               github,
+	}
+	jsonBody, err := json.Marshal(requestBody)
+	if err != nil {
+		// 处理请求体数据序列化错误
+		fmt.Printf("Error serializing request body: %v\n", err)
+		return
+	}
 
-	// 发送 GET 请求
-	resp, err := http.Get(reqURL.String())
+	// 发送 POST 请求
+	resp, err := http.Post(reqURL.String(), "application/json", bytes.NewBuffer(jsonBody))
 	if err != nil {
 		// 处理请求错误
 		fmt.Printf("Error sending request: %v\n", err)
