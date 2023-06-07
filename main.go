@@ -195,7 +195,7 @@ func main() {
 		logger.Info("github oauth source", zap.String("source", source))
 		if source != "" { // 使用OAuth配置对象中定义的Exchange方法，通过code获取access token
 			// 拼接https://transformer.knn3.xyz/ + source + /type=github&code= + code
-			url := fmt.Sprintf("https://transformer.staging.knn3.xyz/%s?type=github&code=%s", source, code)
+			url := fmt.Sprintf("https://transformer.knn3.xyz/%s?type=github&code=%s", source, code)
 			c.Redirect(http.StatusTemporaryRedirect, url)
 		} else {
 			c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass?type=github&code="+code)
