@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -12,20 +11,12 @@ import (
 	"github.com/KNN3-Network/oauth-server/utils"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 )
 
 var logger = utils.Logger
 
 var stackoverflow = new(module.Stackoverflow)
-
-func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-}
 
 func main() {
 
