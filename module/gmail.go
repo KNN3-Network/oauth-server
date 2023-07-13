@@ -2,10 +2,12 @@ package module
 
 import (
 	"fmt"
-	"log"
+	"io/ioutil"
+	"net/http"
 	"os"
+	"strings"
 
-	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	gmail "google.golang.org/api/gmail/v1"
@@ -19,10 +21,10 @@ var (
 var clientGamilID, clientGmailSecret, redirectGmailURI string
 
 func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	log.Fatal("Error loading .env file")
+	// }
 	oauthConfig = &oauth2.Config{
 		ClientID:     os.Getenv("GMAIL_ID"),                       // 替换为实际的客户端ID
 		ClientSecret: os.Getenv("GMAIL_SECRET"),                   // 替换为实际的客户端密钥
@@ -32,6 +34,10 @@ func init() {
 		},
 		Endpoint: google.Endpoint,
 	}
+
+	url := oauthConfig.AuthCodeURL("knexus$success=https://knexus.xyz$fail=https://knexus.xyz")
+	logger.Info("gmail oauth AuthCodeURL", zap.String("url", url))
+
 }
 
 func GetGmailProfile(code string) (*gmail.Profile, error) {
@@ -53,5 +59,43 @@ func GetGmailProfile(code string) (*gmail.Profile, error) {
 		return nil, err
 	}
 	return profile, nil
+
+}
+
+// GetAccessToken GetAccessToken
+//
+//	@param email
+//	@return string
+//	@return error
+func GetAccessToken(email string) (string, error) {
+	url := os.Getenv("KNEXUS_API")
+	method := "POST"
+
+	payload := strings.NewReader(`{"gmail": "` + email + `"}`)
+
+	client := &http.Client{}
+	req, err := http.NewRequest(method, url, payload)
+
+	if err != nil {
+		fmt.Println("err:", err)
+		return "", err
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := client.Do(req)
+	if err != nil {
+		fmt.Println("err:", err)
+		return "", err
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		fmt.Println("err:", err)
+		return "", err
+	}
+	fmt.Println(string(body))
+
+	return string(body), nil
 
 }

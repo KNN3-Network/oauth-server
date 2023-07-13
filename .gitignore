@@ -22,3 +22,5 @@ go.work
 .tmp
 tmp
 logger.log
+
+*.log

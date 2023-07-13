@@ -4,23 +4,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
 
 	discord "github.com/bwmarrin/discordgo"
-	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
 )
 
 var clientID, clientSecret, redirectURI string
 
 func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	log.Fatal("Error loading .env file")
+	// }
 	clientID = os.Getenv("DISCORD_ID")
 	clientSecret = os.Getenv("DISCORD_SECRET")
 	redirectURI = "https://knn3-gateway.knn3.xyz/oauth/discord"
