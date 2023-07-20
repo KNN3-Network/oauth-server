@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/KNN3-Network/oauth-server/module"
 	"github.com/KNN3-Network/oauth-server/utils"
@@ -16,6 +19,7 @@ var logger = utils.Logger
 var stackoverflow = new(module.Stackoverflow)
 
 func main() {
+
 	r := gin.Default()
 	r.Use(cors.Default())
 
@@ -217,11 +221,46 @@ func main() {
 	r.GET("/oauth/gmail", func(c *gin.Context) {
 		code := c.Query("code")
 		state := c.Query("state")
+
+		// logger.Info("gmail state", zap.String("state", "state"))
+		// logger.Info("gmail url", zap.String("state", Request.URL.String()))
+
 		if code == "" || state == "" {
 			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("No authorization code provided."))
 			return
 		}
 		logger.Info("gmail oauth认证", zap.String("code", code))
+
+		// knexus gmail login
+		decodedURL, err := url.QueryUnescape(state)
+
+		if err != nil {
+			c.AbortWithError(http.StatusBadRequest, fmt.Errorf("authorization error state"))
+			return
+		}
+
+		stateArr := strings.Split(decodedURL, "$")
+
+		logger.Info("gmail state arr", zap.Any("stateArr", stateArr))
+		if stateArr[0] == "knexus" {
+			success := stateArr[1]
+			fail := stateArr[2]
+
+			profile, err := module.GetGmailProfile(code)
+			if err != nil {
+				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("authorization error code"))
+				return
+			}
+
+			accessToken, err := module.GetAccessToken(profile.EmailAddress)
+			if err != nil {
+				c.Redirect(http.StatusMovedPermanently, strings.Replace(fail, "fail=", "", 1))
+				return
+			}
+
+			c.Redirect(http.StatusMovedPermanently, strings.Replace(success, "success=", "", 1)+"?j="+base64.StdEncoding.EncodeToString([]byte(accessToken)))
+			return
+		}
 
 		c.Redirect(http.StatusTemporaryRedirect, "https://topscore.social/pass?type=gmail&code="+code)
 	})
