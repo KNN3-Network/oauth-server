@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	gmail "google.golang.org/api/gmail/v1"
@@ -35,8 +34,8 @@ func init() {
 		Endpoint: google.Endpoint,
 	}
 
-	url := oauthConfig.AuthCodeURL("knexus$success=https://knexus.xyz$fail=https://knexus.xyz")
-	logger.Info("gmail oauth AuthCodeURL", zap.String("url", url))
+	// url := oauthConfig.AuthCodeURL("knexus$success=https://knexus.xyz$fail=https://knexus.xyz")
+	// logger.Info("gmail oauth AuthCodeURL", zap.String("url", url))
 
 }
 
