@@ -64,13 +64,14 @@ func GetGmailProfile(code string) (*gmail.Profile, error) {
 // GetAccessToken GetAccessToken
 //
 //	@param email
+//	@param source
 //	@return string
 //	@return error
-func GetAccessToken(email string) (string, error) {
+func GetAccessToken(email string, source string) (string, error) {
 	url := os.Getenv("KNEXUS_API")
 	method := "POST"
 
-	payload := strings.NewReader(`{"gmail": "` + email + `"}`)
+	payload := strings.NewReader(`{"gmail": "` + email + `","type": "` + source + `"}`)
 
 	client := &http.Client{}
 	req, err := http.NewRequest(method, url, payload)
