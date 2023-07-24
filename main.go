@@ -242,7 +242,7 @@ func main() {
 		stateArr := strings.Split(decodedURL, "$")
 
 		logger.Info("gmail state arr", zap.Any("stateArr", stateArr))
-		if stateArr[0] == "knexus" {
+		if stateArr[0] == "knexus" || stateArr[0] == "knexus_early" {
 			success := stateArr[1]
 			fail := stateArr[2]
 
@@ -252,7 +252,15 @@ func main() {
 				return
 			}
 
-			accessToken, err := module.GetAccessToken(profile.EmailAddress)
+			source := ""
+			if stateArr[0] == "knexus" {
+				source = "normal"
+			}
+			if stateArr[0] == "knexus_early" {
+				source = "early"
+			}
+
+			accessToken, err := module.GetAccessToken(profile.EmailAddress, source)
 			if err != nil {
 				c.Redirect(http.StatusMovedPermanently, strings.Replace(fail, "fail=", "", 1))
 				return
