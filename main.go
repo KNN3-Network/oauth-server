@@ -246,7 +246,7 @@ func main() {
 			success := stateArr[1]
 			fail := stateArr[2]
 
-			profile, err := module.GetGmailProfile(code)
+			profile, err := module.GetGmailProfileByKnexus(code)
 			if err != nil {
 				c.AbortWithError(http.StatusBadRequest, fmt.Errorf("authorization error code"))
 				return

@@ -1,12 +1,14 @@
 package module
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
 
+	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	gmail "google.golang.org/api/gmail/v1"
@@ -15,6 +17,8 @@ import (
 var (
 	oauthConfig *oauth2.Config
 	oauthState  = "random-string" // 可以使用随机生成的字符串
+
+	oauthKnexusConfig *oauth2.Config
 )
 
 var clientGamilID, clientGmailSecret, redirectGmailURI string
@@ -34,18 +38,50 @@ func init() {
 		Endpoint: google.Endpoint,
 	}
 
-	// url := oauthConfig.AuthCodeURL("knexus$success=https://knexus.xyz$fail=https://knexus.xyz")
-	// logger.Info("gmail oauth AuthCodeURL", zap.String("url", url))
+	oauthKnexusConfig = &oauth2.Config{
+		ClientID:     os.Getenv("KNEXUS_GMAIL_ID"),           // 替换为实际的客户端ID
+		ClientSecret: os.Getenv("KNEXUS_GMAIL_SECRET"),       // 替换为实际的客户端密钥
+		RedirectURL:  os.Getenv("KNEXUS_GMAIL_REDIRECT_URL"), // 替换为实际的回调URL
+		Scopes: []string{
+			gmail.GmailReadonlyScope,
+		},
+		Endpoint: google.Endpoint,
+	}
+
+	url := oauthKnexusConfig.AuthCodeURL("knexus$success=https://knexus.xyz$fail=https://knexus.xyz")
+	logger.Info("gmail oauth AuthCodeURL", zap.String("url", url))
 
 }
 
 func GetGmailProfile(code string) (*gmail.Profile, error) {
-	token, err := oauthConfig.Exchange(oauth2.NoContext, code)
+	token, err := oauthConfig.Exchange(context.Background(), code)
 	if err != nil {
 		fmt.Println("err:", err)
 		return nil, err
 	}
-	client := oauthConfig.Client(oauth2.NoContext, token)
+	client := oauthConfig.Client(context.Background(), token)
+	gmailService, err := gmail.New(client)
+	if err != nil {
+		fmt.Println("err:", err)
+		return nil, err
+	}
+
+	profile, err := gmailService.Users.GetProfile("me").Do()
+	if err != nil {
+		fmt.Println("err:", err)
+		return nil, err
+	}
+	return profile, nil
+
+}
+
+func GetGmailProfileByKnexus(code string) (*gmail.Profile, error) {
+	token, err := oauthKnexusConfig.Exchange(context.Background(), code)
+	if err != nil {
+		fmt.Println("err:", err)
+		return nil, err
+	}
+	client := oauthKnexusConfig.Client(context.Background(), token)
 	gmailService, err := gmail.New(client)
 	if err != nil {
 		fmt.Println("err:", err)
