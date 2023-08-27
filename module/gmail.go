@@ -38,6 +38,8 @@ func init() {
 		Endpoint: google.Endpoint,
 	}
 
+	logger.Info("gmail oauthConfig", zap.Any("url", oauthConfig))
+
 	oauthKnexusConfig = &oauth2.Config{
 		ClientID:     os.Getenv("KNEXUS_GMAIL_ID"),           // 替换为实际的客户端ID
 		ClientSecret: os.Getenv("KNEXUS_GMAIL_SECRET"),       // 替换为实际的客户端密钥
@@ -47,6 +49,8 @@ func init() {
 		},
 		Endpoint: google.Endpoint,
 	}
+
+	logger.Info("gmail oauthKnexusConfig", zap.Any("url", oauthKnexusConfig))
 
 	url := oauthKnexusConfig.AuthCodeURL("knexus$success=https://knexus.xyz$fail=https://knexus.xyz")
 	logger.Info("gmail oauth AuthCodeURL", zap.String("url", url))

@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"gorm.io/driver/postgres"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -33,15 +33,14 @@ func init() {
 		log.Fatal("Error loading .env file")
 	}
 	// 连接到 MySQL 服务器
-	dsn := fmt.Sprintf("host=%s port=%s dbname=tr-notification user=%s password=%s sslmode=disable",
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/lens?charset=utf8mb4&parseTime=True&loc=Local",
 		os.Getenv("DB_USERNAME"),
 		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
 	)
-	db, err = gorm.Open(postgres.New(postgres.Config{
-		DSN:                  dsn,
-		PreferSimpleProtocol: true, // disables implicit prepared statement usage
+	db, err = gorm.Open(mysql.New(mysql.Config{
+		DSN: dsn,
 	}), &gorm.Config{})
 
 	if err != nil {
